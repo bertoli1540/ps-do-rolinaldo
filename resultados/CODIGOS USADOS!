@@ -424,3 +424,25 @@ ggplot(medalha3) +
   ) +
   labs(title = " MEDALHA RYAN STEVEN", x = "Cor das medalhas", y = "Quantas medalhas ganhou") +
   theme_estat()  
+
+
+### ANALISE 4
+
+{r}
+
+
+ggplot(olimpiadas, aes(x = Peso, y = Altura)) +
+  geom_point(color = "#A11D21") +
+  geom_hline(aes(yintercept = mean(Altura, na.rm = TRUE), color = "Média de Altura"), linetype = "dashed", size = 1) + 
+  geom_vline(aes(xintercept = mean(Peso, na.rm = TRUE), color = "Média de Peso"), linetype = "dashed", size = 1) + 
+  geom_smooth(method = "lm", aes(color = "Linha de Regressão")) +
+  labs(
+    title = "Altura x Peso",
+    x = "Peso",
+    y = "Altura",
+    color = "Legenda"
+  ) +
+  scale_color_manual(values = c("Média de Altura" = "#003366", "Média de Peso" = "#CC9900", "Linha de Regressão" = "#663333"))+
+  scale_y_continuous(breaks = seq(min(olimpiadas$Altura, na.rm = TRUE), max(olimpiadas$Altura, na.rm = TRUE), by = 10)) +
+  theme_estat()
+

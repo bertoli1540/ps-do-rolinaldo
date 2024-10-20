@@ -198,7 +198,6 @@ ggplot(espotes) +
   theme_estat()  
 
 
-ggsave("box_imc_esportes_ordenado.pdf", width = 158, height = 93, units = "mm")
 
 
 

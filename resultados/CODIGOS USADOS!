@@ -58,7 +58,6 @@ include-before-body:
 
 editor: visual
 ---
-
 {r}
 library(kableExtra)
 library(DT)
@@ -94,7 +93,16 @@ colnames(pequim) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte
 
 colnames(athenas) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte", "Evento", "Medalha")
 
-olimpiadas =  rbind(athenas,rj,londres,sydney,pequim)
+primeiro =  rbind(athenas,rj,londres,sydney,pequim)
+
+olimpiadasG = subset(primeiro, Medalha== "Gold")
+
+olimpiadasS = subset(primeiro, Medalha== "Silver")
+
+olimpiadasB = subset(primeiro, Medalha== "Bronze")
+
+olimpiadas =  rbind(olimpiadasG,olimpiadasS,olimpiadasB)
+
 
 estat_colors <- c(
 "#A11D21", "#003366", "#CC9900",
@@ -123,49 +131,51 @@ scale_colour_manual(values = estat_colors)
 )
 }
 
-# ANALISE 1
-
 {r}
 medalW = subset(olimpiadas, Sexo== "F")
 
-medalWg = subset(medalW, Medalha== "Gold")
 
-medalWs = subset(medalW, Medalha== "Silver")
 
-medalWb = subset(medalW, Medalha== "Bronze")
 
-medalWgsb = rbind(medalWg,medalWs,medalWb)
+medalW$Pais[medalW$Pais == "United States"] = "Estados Unidos"
 
-tabelamedalhasgeral= table(medalWgsb$Pais)
+medalW$Pais[medalW$Pais == "Germany"] = "Alemanha"
+
+tabelamedalhasgeral= table(medalW$Pais)
 
 top5medalhas = sort(tabelamedalhasgeral, decreasing = TRUE)
-
-head( top5medalhas, 5)
 
 
 
 top5= data.frame(Team = names(head(top5medalhas, 5)), 
                       Medalhas = as.numeric(head(top5medalhas, 5)))
 
+
+
 ggplot(top5, aes(x = reorder(Team, -Medalhas), y = Medalhas)) +
   geom_bar(stat = "identity", fill = "#A11D21") +
-  labs(title = "Top 5 países com mais medalhas entre as mulheres", x = "Países", y = "Número de Medalhas")+
+  geom_text(aes(label = paste0(Medalhas, " (", round(Medalhas / sum(Medalhas) * 100, 1), "%)")),
+            vjust = -0.5, size = 2.5) +
+  
+  labs(title = "Top 5 países com mais medalhas entre as mulheres", 
+       x = "Países", y = "Número de Medalhas") +
   theme_estat()
 
 
 
 
 
-# ANALISE 2
+head( top5medalhas, 5)
 
 {r}
 
-olimpiadas$Peso <- as.numeric(olimpiadas$Peso)  # Garanta que os valores são numéricos
-olimpiadas$pesokg = olimpiadas$Peso * 0.453592  # Converte para kg
+olimpiadas$Peso <- as.numeric(olimpiadas$Peso)  
+
+olimpiadas$pesokg = olimpiadas$Peso * 0.453592 
 
 olimpiadas$alturam = olimpiadas$Altura / 100
 
-# Supondo que as colunas 'peso_kg' e 'altura_m' existam
+
 olimpiadas$imc <- olimpiadas$pesokg / (olimpiadas$alturam^2)
 
 judo =  subset(olimpiadas, Esporte == "Judo")
@@ -192,16 +202,11 @@ ggplot(espotes) +
   stat_summary(
     aes(shape = "Média"), fun = "mean", geom = "point", size = 3, fill = "white"
   ) +
-  labs(x = "Esporte", y = "IMC", fill = "", shape = "") + 
+  labs(x = "Esporte", y = "IMC", title = "IMC POR ESPORTE") + 
   scale_shape_manual(values = c(23)) +  
   scale_fill_manual(values = c("Mediana" = "#A11D21")) +  
+  guides(fill = "none", shape = "none") +  
   theme_estat()  
-
-
-
-
-
-# ANALISE 3
 
 {r}
 ouro = subset(olimpiadas, Medalha == "Gold")
@@ -231,11 +236,6 @@ Top3alltimeOLympic = data.frame(
 
 Top3alltimeOLympic$esporte = medalhaalltime$Esporte[match(Top3alltimeOLympic$nome, medalhaalltime$Nome)]
 
-
-
-head(Top3alltimeOLympic, 3)
-
-
 ggplot(Top3alltimeOLympic, aes(x = nome, y = medalhas)) +
   geom_bar(stat = "identity", fill = "#A11D21") +
   labs(
@@ -245,7 +245,7 @@ ggplot(Top3alltimeOLympic, aes(x = nome, y = medalhas)) +
   ) + 
   theme_estat()
 
-
+head(Top3alltimeOLympic, 3)
 
 {r}
 michaelphelps = subset(olimpiadas, Nome == "Michael Fred Phelps, II")
@@ -253,11 +253,11 @@ michaelphelps = subset(olimpiadas, Nome == "Michael Fred Phelps, II")
 natalie = subset(olimpiadas, Nome == "Natalie Anne Coughlin (-Hall)")
 ryan = subset(olimpiadas, Nome == "Ryan Steven Lochte")
 
-michaelphelps$Medalha[is.na(michaelphelps$Medalha)] = "Out podium"
+michaelphelps$Medalha[is.na(michaelphelps$Medalha)] = "fora do pódio"
 
-natalie$Medalha[is.na(natalie$Medalha)] <- "Out podium"
+natalie$Medalha[is.na(natalie$Medalha)] <- "fora do pódio"
 
-ryan$Medalha[is.na(ryan$Medalha)] <- "Out podium"
+ryan$Medalha[is.na(ryan$Medalha)] <- "fora do pódio"
 
 medalha1 <- michaelphelps %>%
   count(Medalha) %>%
@@ -323,15 +323,13 @@ ggplot(medalha3) +
   theme_estat()  
 
 
-### ANALISE 4
-
 {r}
 
 
-ggplot(olimpiadas, aes(x = Peso, y = Altura)) +
+ggplot(olimpiadas, aes(x = pesokg, y = Altura)) +
   geom_point(color = "#A11D21") +
   geom_hline(aes(yintercept = mean(Altura, na.rm = TRUE), color = "Média de Altura"), linetype = "dashed", size = 1) + 
-  geom_vline(aes(xintercept = mean(Peso, na.rm = TRUE), color = "Média de Peso"), linetype = "dashed", size = 1) + 
+  geom_vline(aes(xintercept = mean(pesokg, na.rm = TRUE), color = "Média de Peso"), linetype = "dashed", size = 1) + 
   geom_smooth(method = "lm", aes(color = "Linha de Regressão")) +
   labs(
     title = "Altura x Peso",
@@ -342,4 +340,30 @@ ggplot(olimpiadas, aes(x = Peso, y = Altura)) +
   scale_color_manual(values = c("Média de Altura" = "#003366", "Média de Peso" = "#CC9900", "Linha de Regressão" = "#663333"))+
   scale_y_continuous(breaks = seq(min(olimpiadas$Altura, na.rm = TRUE), max(olimpiadas$Altura, na.rm = TRUE), by = 10)) +
   theme_estat()
+
+
+ggplot(olimpiadas, aes(x = Peso, y = Altura)) +
+  geom_point(color = "#A11D21", size = 3, alpha = 0.2) +  
+  
+  geom_hline(aes(yintercept = mean(Altura, na.rm = TRUE), color = "Média de Altura"), 
+             linetype = "dashed", size = 1) + 
+  geom_vline(aes(xintercept = mean(Peso, na.rm = TRUE), color = "Média de Peso"), 
+             linetype = "dashed", size = 1) + 
+  geom_smooth(method = "lm", aes(color = "Linha de Regressão"), se = FALSE) +
+  
+
+  labs(
+    title = "Altura x Peso",
+    x = "Peso (kg)",
+    y = "Altura (cm)",
+    color = "Legenda"
+  ) +
+  
+  
+  scale_color_manual(values = c("Média de Altura" = "#003366", "Média de Peso" = "#CC9900", "Linha de Regressão" = "#663333")) +
+  
+
+  scale_y_continuous(breaks = seq(min(olimpiadas$Altura, na.rm = TRUE), max(olimpiadas$Altura, na.rm = TRUE), by = 10)) +
+  theme_estat()
+
 

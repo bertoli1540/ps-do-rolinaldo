@@ -1,0 +1,322 @@
+{r}
+
+
+
+library(kableExtra)
+library(DT)
+library(knitr)
+library(pacman)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+library(plotly)
+athenas = read_excel("OlimpiadasPS.xlsx", 
+                           sheet = "Athina")
+
+rj = read_excel("OlimpiadasPS.xlsx", 
+                    sheet = "Rio de Janeiro")
+
+londres = read_excel("OlimpiadasPS.xlsx", 
+                          sheet = "London")
+
+sydney = read_excel("OlimpiadasPS.xlsx", 
+                            sheet = "Sydney")
+
+pequim = read_excel("OlimpiadasPS.xlsx", 
+                    sheet = "Beijing")
+# Organizando o banco de dados
+colnames(sydney) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte", "Evento", "Medalha")
+
+colnames(rj) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte", "Evento", "Medalha")
+
+colnames(londres) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte", "Evento", "Medalha")
+
+colnames(pequim) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte", "Evento", "Medalha")
+
+colnames(athenas) = c("Nome", "Sexo", "Idade", "Altura", "Peso", "Pais", "Esporte", "Evento", "Medalha")
+
+primeiro =  rbind(athenas,rj,londres,sydney,pequim)
+
+olimpiadasG = subset(primeiro, Medalha== "Gold")
+
+olimpiadasS = subset(primeiro, Medalha== "Silver")
+
+olimpiadasB = subset(primeiro, Medalha== "Bronze")
+
+olimpiadas =  rbind(olimpiadasG,olimpiadasS,olimpiadasB)
+
+
+estat_colors <- c(
+"#A11D21", "#003366", "#CC9900",
+"#663333", "#FF6600", "#CC9966",
+"#999966", "#006606", "#008091",
+"#041835", "#666666" )
+
+theme_estat <- function(...) {
+theme <- ggplot2::theme_bw() +
+ggplot2::theme(
+axis.title.y = ggplot2::element_text(colour = "black", size = 12),
+axis.title.x = ggplot2::element_text(colour = "black", size = 12),
+axis.text = ggplot2::element_text(colour = "black", size = 9.5)
+,
+panel.border = ggplot2::element_blank(),
+axis.line = ggplot2::element_line(colour = "black"),
+legend.position = "top",
+...
+)
+return(
+list(
+theme,
+scale_fill_manual(values = estat_colors),
+scale_colour_manual(values = estat_colors)
+)
+)
+}
+
+ANALISE 1
+
+{r}
+library(dplyr)
+library(ggplot2)
+
+
+medalW = subset(olimpiadas, Sexo == "F")
+medalW$Pais[medalW$Pais == "United States"] <- "Estados Unidos"
+medalW$Pais[medalW$Pais == "Germany"] <- "Alemanha"
+
+
+atletasW <- medalW %>%
+  distinct(Nome, .keep_all = TRUE) %>%
+  group_by(Pais) %>%
+  summarise(Numero_Atletas = n())
+
+
+top5_atletas <- atletasW %>%
+  arrange(desc(Numero_Atletas)) %>%
+  head(5)
+
+
+total_atletas <- sum(atletasW$Numero_Atletas)
+top5_atletas <- top5_atletas %>%
+  mutate(Porcentagem = round(Numero_Atletas / total_atletas * 100, 1))
+
+
+ggplot(top5_atletas, aes(x = reorder(Pais, -Numero_Atletas), y = Numero_Atletas)) +
+  geom_bar(stat = "identity", fill = "#A11D21") +
+  geom_text(aes(label = paste0(Numero_Atletas, " (", Porcentagem, "%)")),
+            vjust = -0.5, size = 3.0) +
+  labs(title = "Figura 1: Histograma sobre Top 5 países com mais atletas medalhistas únicos entre as mulheres", 
+       x = "Países", y = "Frequência") +
+  scale_y_continuous(limits = c(0, 600), breaks = seq(0, 600, by = 200))+
+  theme_estat()
+
+ANALISE 2
+
+{r}
+
+
+olimpiadas$Peso <- as.numeric(olimpiadas$Peso)  
+
+olimpiadas$pesokg = olimpiadas$Peso * 0.453592 
+
+olimpiadas$alturam = olimpiadas$Altura / 100
+
+
+olimpiadas$imc <- olimpiadas$pesokg / (olimpiadas$alturam^2)
+
+judo =  subset(olimpiadas, Esporte == "Judo")
+
+badminton =  subset(olimpiadas, Esporte == "Badminton")
+
+futebol = subset(olimpiadas, Esporte == "Football")
+
+ginastica = subset(olimpiadas, Esporte == "Gymnastics")
+
+atletismo = subset(olimpiadas, Esporte == "Athletics")
+
+espotes=rbind(judo,badminton,futebol,ginastica,atletismo)
+
+espotes$Esporte[espotes$Esporte == "Football"] = "Futebol"
+
+espotes$Esporte[espotes$Esporte == "Gymnastics"] = "Ginastica"
+
+espotes$Esporte[espotes$Esporte == "Athletics"] = "Atletismo"
+
+
+
+library(forcats)
+
+ggplot(espotes) +
+  aes(x = fct_reorder(Esporte, imc, .fun = median), y = imc) +  # Organizando pela mediana
+  geom_boxplot(fill = c("#A11D21"), width = 0.5) +
+  stat_summary(
+    fun = "mean", geom = "point", shape = 23, size = 3, fill = "white"
+  ) +
+  labs(x = "Esporte", y = "IMC (kg/m²)") +
+  ggtitle("Figura 2: Boxplot sobre os IMCs no esporte") +
+  theme_estat()
+
+{r, echo=FALSE, results='asis'}
+cat("\\begin{quadro}[H]
+\\caption{Tabela 1: Medidas resumo dos IMCs(kg/m2)}
+\\centering
+\\begin{tabular}{| l |
+			S[table-format = 2.2]
+			S[table-format = 1.2]
+			S[table-format = 2.2]
+			S[table-format = 2.2]
+			S[table-format = 2.2]
+			|}
+	\\toprule
+		\\textbf{Estatística} & \\textbf{Ginastica} & \\textbf{Atletismo} & \\textbf{Badminton} & \\textbf{Futebol} & \\textbf{Judo} \\\\
+		\\midrule
+		Média & 20,68 & 22,30 & 22,21  & 22,51 & 25,70 \\\\
+		Desvio Padrão & 2,38 & 3,86 & 1,50 & 1,73  & 5,12 \\\\
+		Variância & 5,67 & 14,92 & 2,26 & 2,99 & 26,23 \\\\
+		Mínimo & 15,16 & 15,82 & 18,94 & 16,73 & 18,52 \\\\
+		1º Quartil & 18,61  & 20,03 & 21,22 & 21,34 & 22,06 \\\\
+		Mediana & 21,09 & 21,45 & 22,28 & 22,49 & 24,68 \\\\
+		3º Quartil & 22,48 & 23,67 & 23,21 & 23,71 & 27,70 \\\\
+		Máximo & 26,45 & 44,38 & 26,73 & 29,07 & 56,50\\\\
+	\\bottomrule
+	\\end{tabular}
+	\\label{quad:quadro_resumo1}
+\\end{quadro}
+")
+
+ANALISE 3
+
+{r}
+olimpiadas$Medalha[olimpiadas$Medalha == "Gold"] = "Ouro"
+olimpiadas$Medalha[olimpiadas$Medalha == "Silver"] = "Prata"
+
+olimpiadas$Nome[olimpiadas$Nome == "Michael Fred Phelps, II"] = "Michael Phelps"
+
+olimpiadas$Nome[olimpiadas$Nome == "Natalie Anne Coughlin (-Hall)"] = "Natalie Anne Coughlin"
+
+ouro = subset(olimpiadas, Medalha == "Ouro")
+
+prata = subset(olimpiadas, Medalha == "Prata")
+
+bronze = subset(olimpiadas, Medalha == "Bronze")
+
+medalhaalltime = rbind(ouro,prata,bronze)
+
+
+michaelphelps = subset(medalhaalltime,Nome == "Michael Phelps")
+
+natalie =  subset(medalhaalltime, Nome == "Natalie Anne Coughlin")
+
+ryan = subset(medalhaalltime,Nome == "Ryan Steven Lochte")
+
+top3= rbind(michaelphelps, natalie,  ryan)
+{r}
+
+library(dplyr)
+library(forcats)
+library(ggplot2)
+library(stringr)
+
+
+trans_drv <- top3 %>%
+  mutate(Nome = case_when(
+    str_detect(Nome, "auto") ~ "auto",
+    str_detect(Nome, "manual") ~ "manual",
+    TRUE ~ Nome 
+  )) %>%
+  group_by(Nome, Medalha) %>%
+  summarise(freq = n(), .groups = "drop") %>%
+  mutate(
+    Medalha = fct_relevel(Medalha, "Ouro", "Prata", "Bronze"),  
+    freq_relativa = round(freq / sum(freq) * 100, 1)
+  ) %>%
+  group_by(Nome) %>%
+  mutate(total_medalhas = sum(freq)) %>%  
+
+ANALISE 4
+
+{r}
+
+
+ggplot(olimpiadas, aes(x = Altura, y = pesokg)) +
+  geom_point(color = "#A11D21",size = 3, alpha = 0.2) +  
+  labs(
+    title = "Figura 4: Gráfico de Dispersão Altura pelo Peso",
+    x = "Altura(cm)",
+    y = "Peso(kg)",
+    color = "Legenda"
+  ) +
+  theme_estat()
+
+correlacao <- cor(olimpiadas$pesokg, olimpiadas$Altura, use = "complete.obs")
+
+{r, echo=FALSE, results='asis'}
+cat("\\begin{quadro}[H]
+\\caption{Tabela 2: Medidas resumo da variável peso (kg)}
+\\centering
+\\begin{tabular}{| l | @{} S[table-format = 6.2] @{} |}
+    \\toprule
+        \\textbf{Estatística} & \\textbf{Valor} \\\\
+    \\midrule
+        Média & 74.00 \\\\
+        Desvio Padrão & 16.26 \\\\
+        Variância & 264.26 \\\\
+        Mínimo & 28.00 \\\\
+        1º Quartil & 62.00 \\\\
+        Mediana & 72.00 \\\\
+        3º Quartil & 84.00 \\\\
+        Máximo & 175.00 \\\\
+    \\bottomrule
+\\end{tabular}
+\\label{quad:quadro_resumo1}
+\\end{quadro}
+")
+
+{r, echo=FALSE, results='asis'}
+cat("\\begin{quadro}[H]
+\\caption{Tabela 3: Medidas resumo da variável altura(cm)}
+\\centering
+\\begin{tabular}{| l | @{} S[table-format = 6.2] @{} |}
+	\\toprule
+		\\textbf{Estatística} & \\textbf{Valor} \\\\
+	\\midrule
+		Média & 178.24 \\\\
+		Desvio Padrão & 11.80 \\\\
+		Variância & 139.23 \\\\
+		Mínimo & 137.00 \\\\
+		1º Quartil & 170.00 \\\\
+		Mediana & 178.00 \\\\
+		3º Quartil & 186.00 \\\\
+		Máximo & 219.00 \\\\
+	\\bottomrule
+\\end{tabular}
+\\label{quad:quadro_resumo1}
+\\end{quadro}
+")
+
+  ungroup() %>%
+  mutate(Nome = fct_reorder(Nome, total_medalhas, .desc = TRUE))  
+
+
+porcentagens <- str_c(trans_drv$freq_relativa, "%") %>% str_replace("\\.", ",")
+legendas <- str_squish(str_c(trans_drv$freq, " (", porcentagens, ")"))
+
+
+ggplot(trans_drv) +
+  aes(
+    x = Nome,  
+    y = freq,
+    fill = Medalha,
+    label = legendas
+  ) +
+  geom_col(position = position_dodge2(preserve = "single", padding = 0)) +
+  geom_text(
+    position = position_dodge(width = 0.9),
+    vjust = -0.5, hjust = 0.5,
+    size = 3
+  ) +
+  labs(x = "Nome do Atleta", y = "Frequência") +
+  ggtitle("Figura 3: Histograma sobre a Quantidade de Medalhas por Atleta e Tipo de Medalha") +
+  scale_y_continuous(limits = c(0, 25), breaks = seq(0, 49, by = 10))+ 
+  theme_estat()
